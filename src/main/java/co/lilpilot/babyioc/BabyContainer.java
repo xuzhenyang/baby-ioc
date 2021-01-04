@@ -12,6 +12,8 @@ public class BabyContainer {
 
     private final Map<Class<?>, Object> singletons = Collections.synchronizedMap(new HashMap<>());
 
+    private Set<Class<?>> processingClasses = Collections.synchronizedSet(new HashSet<>());
+
     /**
      * 获取对象
      * @param clazz  目标类
@@ -46,6 +48,7 @@ public class BabyContainer {
         if (constructorList.size() == 0) {
             throw new RuntimeException("注入的类没有可获取的构造器 " + clazz.getCanonicalName());
         }
+        processingClasses.add(clazz);
         T target = createFromConstructor(constructorList.get(0));
         boolean isSingleton = clazz.isAnnotationPresent(Singleton.class);
         if (isSingleton) {
@@ -60,6 +63,9 @@ public class BabyContainer {
         int paramIndex = 0;
         Object[] params = new Object[constructor.getParameterCount()];
         for (Parameter parameter : constructor.getParameters()) {
+            if (processingClasses.contains(parameter.getType())) {
+                throw new RuntimeException("循环依赖");
+            }
             Object param = createFromParameter(parameter);
             params[paramIndex++] = param;
         }

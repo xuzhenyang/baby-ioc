@@ -52,6 +52,17 @@ public class BabyIoCTest {
         assertThat(a.getB()).isNotNull();
     }
 
+    @Test
+    public void should_throw_exception_when_constructor_circular_dependency() {
+        //given
+        //when
+        BabyContainer babyContainer = new BabyContainer();
+        //then
+        assertThatThrownBy(() -> babyContainer.getInstance(A.class))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessage("循环依赖");
+    }
+
 }
 
 @Getter
@@ -68,5 +79,8 @@ class A {
 }
 
 class B {
+
+    @Inject
+    private A a;
 
 }

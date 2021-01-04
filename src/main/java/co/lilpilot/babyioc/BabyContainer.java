@@ -1,11 +1,13 @@
 package co.lilpilot.babyioc;
 
+import javax.inject.Singleton;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public class BabyContainer {
+
+    private final Map<Class<?>, Object> singletons = Collections.synchronizedMap(new HashMap<>());
 
     /**
      * 获取对象
@@ -15,7 +17,15 @@ public class BabyContainer {
      */
     @SuppressWarnings("unchecked")
     public <T> T getInstance(Class<T> clazz) {
-        List<Constructor<?>> constructorList = new ArrayList<>();
+        Object object = singletons.get(clazz);
+        if (object != null) {
+            return (T) object;
+        }
+        return createNew(clazz);
+    }
+
+    private <T> T createNew(Class<T> clazz) {
+        List<Constructor<T>> constructorList = new ArrayList<>();
         // 获取无参构造器
         for (Constructor<?> constructor : clazz.getDeclaredConstructors()) {
             if (constructor.getParameterCount() > 0) {
@@ -24,7 +34,7 @@ public class BabyContainer {
             if (!constructor.isAccessible()) {
                 constructor.setAccessible(true);
             }
-            constructorList.add(constructor);
+            constructorList.add((Constructor<T>) constructor);
         }
         if (constructorList.size() > 1) {
             throw new RuntimeException("duplicated constructor for injection class " + clazz.getCanonicalName());
@@ -34,9 +44,13 @@ public class BabyContainer {
         }
         T target;
         try {
-            target = (T) constructorList.get(0).newInstance();
+            target = constructorList.get(0).newInstance();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException("create instance from constructor error", e);
+        }
+        boolean isSingleton = clazz.isAnnotationPresent(Singleton.class);
+        if (isSingleton) {
+            singletons.put(clazz, target);
         }
         return target;
     }

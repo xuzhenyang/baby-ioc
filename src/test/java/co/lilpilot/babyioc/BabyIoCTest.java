@@ -4,6 +4,7 @@ import lombok.Getter;
 import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 
 import static org.assertj.core.api.Assertions.*;
@@ -65,6 +66,7 @@ public class BabyIoCTest {
 
     @Test
     public void should_be_fine_when_singleton_circular_dependency() {
+        //TODO 如果B从构造器注入，会导致有两个不一样的A实例
         //given
         //when
         BabyContainer babyContainer = new BabyContainer();
@@ -76,14 +78,30 @@ public class BabyIoCTest {
         assertThat(a.getB().getA()).isEqualTo(a);
     }
 
+    @Test
+    public void could_inject_qualifier() {
+        //given
+        //when
+        BabyContainer babyContainer = new BabyContainer();
+        babyContainer.registerQualifiedClass(Base.class, C.class);
+        A a = babyContainer.getInstance(A.class);
+        //then
+        assertThat(a).isNotNull();
+        assertThat(a.getC()).isNotNull();
+        assertThat(a.getC()).isInstanceOf(C.class);
+    }
+
 }
 
 @Getter
 @Singleton
 class A {
-    //TODO 如果B从构造器注入，会导致有两个不一样的A实例
     @Inject
     private B b;
+
+    @Inject
+    @Named("c")
+    private Base c;
 
 }
 
@@ -93,5 +111,15 @@ class B {
 
     @Inject
     private A a;
+
+}
+
+interface Base {
+
+}
+
+@Singleton
+@Named("c")
+class C implements Base {
 
 }

@@ -5,6 +5,7 @@ import javax.inject.Singleton;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Parameter;
 import java.util.*;
 
 public class BabyContainer {
@@ -28,9 +29,10 @@ public class BabyContainer {
 
     private <T> T createNew(Class<T> clazz) {
         List<Constructor<T>> constructorList = new ArrayList<>();
-        // 获取无参构造器
+        // 获取构造器
         for (Constructor<?> constructor : clazz.getDeclaredConstructors()) {
-            if (constructor.getParameterCount() > 0) {
+            // 无参构造器不过滤
+            if (!constructor.isAnnotationPresent(Inject.class) && constructor.getParameterCount() > 0) {
                 continue;
             }
             if (!constructor.isAccessible()) {
@@ -55,8 +57,15 @@ public class BabyContainer {
     }
 
     private <T> T createFromConstructor(Constructor<T> constructor) {
+        int paramIndex = 0;
+        Object[] params = new Object[constructor.getParameterCount()];
+        for (Parameter parameter : constructor.getParameters()) {
+            Object param = createFromParameter(parameter);
+            params[paramIndex++] = param;
+        }
+
         try {
-            return constructor.newInstance();
+            return constructor.newInstance(params);
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException("构造器实例化失败", e);
         }
@@ -83,6 +92,11 @@ public class BabyContainer {
 
     private <T> T createFromField(Field field) {
         Class<?> type = field.getType();
+        return (T) createNew(type);
+    }
+
+    private <T> T createFromParameter(Parameter parameter) {
+        Class<?> type = parameter.getType();
         return (T) createNew(type);
     }
 }

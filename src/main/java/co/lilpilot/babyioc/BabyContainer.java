@@ -12,7 +12,7 @@ public class BabyContainer {
 
     private final Map<Class<?>, Object> singletons = Collections.synchronizedMap(new HashMap<>());
 
-    private Set<Class<?>> processingClasses = Collections.synchronizedSet(new HashSet<>());
+    private final Set<Class<?>> processingClasses = Collections.synchronizedSet(new HashSet<>());
 
     /**
      * 获取对象
@@ -22,14 +22,14 @@ public class BabyContainer {
      */
     @SuppressWarnings("unchecked")
     public <T> T getInstance(Class<T> clazz) {
-        Object object = singletons.get(clazz);
-        if (object != null) {
-            return (T) object;
-        }
         return createNew(clazz);
     }
 
     private <T> T createNew(Class<T> clazz) {
+        Object object = singletons.get(clazz);
+        if (object != null) {
+            return (T) object;
+        }
         List<Constructor<T>> constructorList = new ArrayList<>();
         // 获取构造器
         for (Constructor<?> constructor : clazz.getDeclaredConstructors()) {
@@ -50,6 +50,7 @@ public class BabyContainer {
         }
         processingClasses.add(clazz);
         T target = createFromConstructor(constructorList.get(0));
+        processingClasses.remove(clazz);
         boolean isSingleton = clazz.isAnnotationPresent(Singleton.class);
         if (isSingleton) {
             singletons.put(clazz, target);

@@ -63,21 +63,32 @@ public class BabyIoCTest {
                 .hasMessage("循环依赖");
     }
 
+    @Test
+    public void should_be_fine_when_singleton_circular_dependency() {
+        //given
+        //when
+        BabyContainer babyContainer = new BabyContainer();
+        A a = babyContainer.getInstance(A.class);
+        //then
+        assertThat(a).isNotNull();
+        assertThat(a.getB()).isNotNull();
+        assertThat(a.getB().getA()).isNotNull();
+        assertThat(a.getB().getA()).isEqualTo(a);
+    }
+
 }
 
 @Getter
 @Singleton
 class A {
-
-    private B b;
-
+    //TODO 如果B从构造器注入，会导致有两个不一样的A实例
     @Inject
-    public A(B b) {
-        this.b = b;
-    }
+    private B b;
 
 }
 
+@Getter
+@Singleton
 class B {
 
     @Inject

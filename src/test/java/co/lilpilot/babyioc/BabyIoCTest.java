@@ -1,7 +1,9 @@
 package co.lilpilot.babyioc;
 
+import lombok.Getter;
 import org.junit.jupiter.api.Test;
 
+import javax.inject.Inject;
 import javax.inject.Singleton;
 
 import static org.assertj.core.api.Assertions.*;
@@ -28,9 +30,28 @@ public class BabyIoCTest {
         assertThat(a1).isEqualTo(a2);
     }
 
+    @Test
+    public void could_inject_from_field() {
+        //given
+        //when
+        BabyContainer babyContainer = new BabyContainer();
+        A a = babyContainer.getInstance(A.class);
+        //then
+        assertThat(a).isNotNull();
+        assertThat(a.getB()).isNotNull();
+    }
+
 }
 
+@Getter
 @Singleton
 class A {
+
+    @Inject
+    private B b;
+
+}
+
+class B {
 
 }
